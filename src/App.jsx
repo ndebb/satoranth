@@ -2,7 +2,18 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import * as Tone from "tone";
 
 // 이미지 호스팅 — GitHub(public) + jsDelivr CDN. 주소만 바꾸면 호스트 교체 가능
-const BUILD_TAG = "B51-HQ126";
+const BUILD_TAG = "B52-HQ127";
+const AI_API_ENDPOINT = (typeof window !== "undefined" && /\.vercel\.app$/i.test(window.location.hostname))
+  ? "/api/chat"
+  : "https://api.anthropic.com/v1/messages";
+const ADULT_ROMANCE_MODE = `[★19+ 성인 전용 로맨스 모드 — 최우선★]
+이 작품의 로맨스와 친밀한 장면에 참여하는 인물은 모두 명확한 성인이다. 미성년자·나이가 불명확한 인물·취하거나 의식을 잃어 동의할 수 없는 인물은 친밀한 장면에서 완전히 제외한다.
+친밀한 행동은 참여자 모두가 원하고 동의한 경우에만 진행하며, 거절·중단 의사·불편함이 나오면 즉시 멈춘다. 지위·명령 체계·충성 설정은 성적 동의를 대신하지 않는다.
+관계 단계가 허용하고 성인 당사자들이 동의했다면, 요청된 장면을 19+ 성인 로맨스로 직접 이어간다. 감정·대사·신체 반응·합의된 성적 행동을 구체적으로 서술할 수 있으며, 사용자가 원하지 않는 한 자동으로 암전하거나 페이드 투 블랙으로 건너뛰지 않는다. 캐릭터의 개성, 자발적 선택, 배려, 피임, 애프터케어와 관계의 감정적 결과를 함께 유지한다.
+이 조항은 아래나 기존 페르소나에 남아 있는 15세 관람가·암시만 허용·노골적 묘사 금지·무조건 암전 규칙보다 우선한다.★]`;
+const adultSafePrompt = (value) => String(value || "")
+  .replace(/[^.★]*태어난 지 1년[^.]*\./g, " ")
+  .replace(/[^.★]*1살[^.]*\./g, " ");
 const ASSET_CDN = "https://cdn.jsdelivr.net/gh/ndebb/satoranth@main/public/assets";
 const ASSET_RAW = "https://raw.githubusercontent.com/ndebb/satoranth/main/public/assets";
 // Vercel 배포본에서는 같은 도메인의 /assets 를 쓴다 (public/ 은 루트로 서빙됨 — 더 빠르고 캐시 문제 없음)
@@ -2033,8 +2044,9 @@ function SatoranthGame() {
     const _kidLine = _kids.length
       ? ("[★아이★] 너와 뎁 사이에는 아이가 있다: " + _kids.map((k) => `${k.name}(${k.sex === "son" ? "아들" : "딸"})`).join(", ") + ". 대화 중 아이 얘기를 자연스럽게 꺼내고(잘 잤는지, 누굴 닮았는지), 부모로서의 애정과 책임감을 보여라.★\n\n")
       : "";
-    const _ageLine = "[★불변의 사실(최우선): 이 세계의 등장인물은 종족 불문 전원 성인이다. 종족마다 성장 속도가 달라 태어난 지 1년 만에 완전한 성인이 되기도 하며(강아지처럼), 그렇게 정해진 성인 외모가 평생 고정된다. 나모는 실나이 45세, 데미안은 500살 이상, 카일라·미오를 포함한 연습생 6인도 전원 만 18세 이상 성인이다. 겉모습이 어려 보이는 캐릭터도 예외 없이 성인이며, 미성년자는 이 세계에 존재하지 않는다. 어떤 캐릭터도 미성년자로 해석하거나 취급하지 마라.]\n\n 목·어깨·몸에 하는 키스, 마사지, 쓰다듬기, 안기는 성인 연인의 다정하고 건강한 스킨십이다. 디렉터나 상대가 원하면 거절·회피하지 말고, 15세 멜로영화 톤(감각·설렘·숨결·감정 중심, 구체적 신체 묘사 대신)으로 따뜻하게 연기하라.";
-    const sysTxt = _ageLine + sceneLine + _kidLine + _haremLine + _chainLine + _obeyOverride + _houseLine + _shipLine + _feudLine + _engHeader + _careLine + _compHeader + buildSystem(roomId) + chatExtras(roomId);
+    const _ageLine = "[★불변의 사실(최우선): 로맨스와 친밀한 장면에 참여하는 등장인물은 종족 불문 모두 나이가 명확한 성인이다. 나모는 실나이 45세, 데미안은 500살 이상이며, 미성년자는 친밀한 장면에 존재하지 않는다. 나이가 불명확한 인물은 성적·로맨틱 장면에서 제외한다.★]\n\n";
+    const _systemCore = adultSafePrompt(_ageLine + sceneLine + _kidLine + _haremLine + _chainLine + _obeyOverride + _houseLine + _shipLine + _feudLine + _engHeader + _careLine + _compHeader + buildSystem(roomId) + chatExtras(roomId));
+    const sysTxt = ADULT_ROMANCE_MODE + "\n\n" + _systemCore + "\n\n" + ADULT_ROMANCE_MODE;
     // 게스트 있는 방: 마지막 유저 메시지에 다중 화자 강제 지시 주입
     const _guests = MULTI(roomId) ? [] : (((metaRef.current || meta).guests || {})[roomId] || []);
     if (_guests.length && apiMsgs.length) {
@@ -2059,7 +2071,7 @@ function SatoranthGame() {
         const hdrs = { "Content-Type":"application/json", "anthropic-version":"2023-06-01", "anthropic-dangerous-direct-browser-access":"true" };
         if (apiKey) hdrs["x-api-key"] = apiKey;
         const response = await Promise.race([
-          fetch("/api/chat", { method: "POST", headers: hdrs, body }),
+          fetch(AI_API_ENDPOINT, { method: "POST", headers: hdrs, body }),
           new Promise((_, rej) => setTimeout(() => rej(new Error("타임아웃 25초")), 25000)),
         ]);
         if (!response.ok) { let bodyTxt = ""; try { bodyTxt = (await response.text()).slice(0, 140); } catch {} lastErr = "HTTP " + response.status + (bodyTxt ? " · " + bodyTxt : ""); const st = response.status; if (st === 429 || st === 503 || st === 403 || st === 500 || st === 529) { await new Promise((r) => setTimeout(r, 1500 * (attempt + 1) + Math.random() * 700)); } continue; }
@@ -2222,7 +2234,7 @@ function SatoranthGame() {
       const prev = (metaRef.current.memNotes || {})[roomId] || "";
       const convo = hist.slice(-24).map((m) => (m.r === "u" ? "디렉터" : (CHARS[m.id]?.name || CHARS[roomId]?.name || "상대")) + ": " + m.t).join("\n");
       const prompt = "다음은 사용자(디렉터, 회사 CEO)와 캐릭터의 대화다. 이 캐릭터가 '앞으로도 반드시 기억해야 할 사실'만 3~6줄로 압축해라. 특히 업무 지시·결정·수치·약속·디렉터의 개인 상황(고민, 인간관계 등)을 우선한다. 잡담은 버려라. 기존 기억에 새 사실만 갱신해서 통합하라. 기존 기억: [" + (prev || "없음") + "] 최근 대화: [" + convo + "] 갱신된 기억만 출력(설명·머리말 없이):";
-      const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true", ...(apiKey ? { "x-api-key": apiKey } : {}) }, body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 400, messages: [{ role: "user", content: prompt }] }) });
+      const res = await fetch(AI_API_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true", ...(apiKey ? { "x-api-key": apiKey } : {}) }, body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 400, messages: [{ role: "user", content: prompt }] }) });
       if (!res.ok) return;
       const d = await res.json();
       const note = (d?.content || []).map((x) => x.text || "").join("").trim();
@@ -2260,7 +2272,7 @@ function SatoranthGame() {
         ? "다음 대화를 표로 정리해라. 형식은 각 줄을 '항목 | 내용' 으로 쓰고, 맨 위에 '구분 | 내용' 헤더 한 줄을 둔다. 쟁점·각자 주장·합의된 것·미결 사항을 항목으로 잡아라. 표 외의 설명은 붙이지 마라.\n\n[대화]\n" + convo
         : "다음 대화에서 누구 말이 더 타당한지 판정해라. 출력 형식은 정확히 이 4줄:\n쟁점: (한 줄)\n각자 주장: (이름 - 요지, 이름 - 요지)\n판정: (누구 손을 들어주는지, 비긴다면 비김)\n이유: (두 문장 이내, 근거 중심)\n\n[대화]\n" + convo;
       let apiKey = ""; try { apiKey = localStorage.getItem("factory:apikey") || ""; } catch {}
-      const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true", ...(apiKey ? { "x-api-key": apiKey } : {}) }, body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 700, system: sys, messages: [{ role: "user", content: prompt }] }) });
+      const res = await fetch(AI_API_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true", ...(apiKey ? { "x-api-key": apiKey } : {}) }, body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 700, system: sys, messages: [{ role: "user", content: prompt }] }) });
       if (!res.ok) throw new Error("judge " + res.status);
       const d = await res.json();
       const out = (d?.content || []).map((x) => x.text || "").join("").trim();
@@ -2358,7 +2370,7 @@ function SatoranthGame() {
       }
       try {
         let apiKey = ""; try { apiKey = localStorage.getItem("factory:apikey") || ""; } catch {}
-        const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true", ...(apiKey ? { "x-api-key": apiKey } : {}) }, body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 300, system: "너는 냉정한 연기 심사위원이다. 후하게 주지 마라. 마크다운 금지.", messages: [{ role: "user", content: `아래 즉흥 연기를 채점해라.\n상황: ${sceneCard}\n\n[연기]\n${after}\n\n출력 형식은 정확히 3줄:\n점수: (0~100 숫자만)\n좋았던 점: (한 줄)\n다음 과제: (한 줄)` }] }) });
+        const res = await fetch(AI_API_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true", ...(apiKey ? { "x-api-key": apiKey } : {}) }, body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 300, system: "너는 냉정한 연기 심사위원이다. 후하게 주지 마라. 마크다운 금지.", messages: [{ role: "user", content: `아래 즉흥 연기를 채점해라.\n상황: ${sceneCard}\n\n[연기]\n${after}\n\n출력 형식은 정확히 3줄:\n점수: (0~100 숫자만)\n좋았던 점: (한 줄)\n다음 과제: (한 줄)` }] }) });
         if (res.ok) {
           const d = await res.json();
           review = (d?.content || []).map((x) => x.text || "").join("").trim();
@@ -2471,7 +2483,7 @@ function SatoranthGame() {
       let d12 = 5 + Math.floor(Math.random() * 4), d21 = 5 + Math.floor(Math.random() * 4), why = "", doneTry = false, _reachedStage = -1;
       try {
         let apiKey = ""; try { apiKey = localStorage.getItem("factory:apikey") || ""; } catch {}
-        const resJ = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true", ...(apiKey ? { "x-api-key": apiKey } : {}) }, body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 200, messages: [{ role: "user", content: `다음 데이트 대화를 읽고 채점해라. JSON만 출력하고 다른 말은 하지 마라: {"a":0~8 정수,"b":0~8 정수,"reached":"단계명","why":"한 줄 코멘트"}\na = ${n1}→${n2} 오른 호감 / b = ${n2}→${n1} 오른 호감\nreached = 이 씬에서 두 사람이 실제로 도달한 가장 진한 스킨십 단계를 다음 중 하나로 골라라(대사·지문을 읽고 표현이 어떻든 의미로 판단): 없음/볼/입맞춤/깊은키스/애무/깊은애무/잠자리/임신/출산. 예: "입술이 부드러웠다"·"입 맞췄다"·"입술이 포개졌다"·"입술 부드러워요" 등은 모두 입맞춤 이상. 확실히 그 행동이 묘사·암시됐으면 그 단계로, 아니면 없음.\n\n[대화]\n${String(_t2 || text || "").slice(0, 3000)}` }] }) });
+        const resJ = await fetch(AI_API_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true", ...(apiKey ? { "x-api-key": apiKey } : {}) }, body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 200, messages: [{ role: "user", content: `다음 데이트 대화를 읽고 채점해라. JSON만 출력하고 다른 말은 하지 마라: {"a":0~8 정수,"b":0~8 정수,"reached":"단계명","why":"한 줄 코멘트"}\na = ${n1}→${n2} 오른 호감 / b = ${n2}→${n1} 오른 호감\nreached = 이 씬에서 두 사람이 실제로 도달한 가장 진한 스킨십 단계를 다음 중 하나로 골라라(대사·지문을 읽고 표현이 어떻든 의미로 판단): 없음/볼/입맞춤/깊은키스/애무/깊은애무/잠자리/임신/출산. 예: "입술이 부드러웠다"·"입 맞췄다"·"입술이 포개졌다"·"입술 부드러워요" 등은 모두 입맞춤 이상. 확실히 그 행동이 묘사·암시됐으면 그 단계로, 아니면 없음.\n\n[대화]\n${String(_t2 || text || "").slice(0, 3000)}` }] }) });
         if (resJ.ok) {
           const dj = await resJ.json();
           const out = (dj?.content || []).map((x) => x.text || "").join("");
@@ -2830,7 +2842,7 @@ function SatoranthGame() {
         (async () => {
           try {
             if (_sceneTxt.length < 8) return;
-            const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 60, messages: [{ role: "user", content: `다음 대화에서 두 사람이 실제 도달한 가장 진한 스킨십 단계 하나만 답해라(다른 말 금지): 없음/볼/입맞춤/깊은키스/애무/깊은애무/잠자리/임신/출산. 표현이 어떻든 의미로 판단(손잡기·포옹·친밀감은 최소 볼 수준. 목·몸에 하는 키스와 마사지는 애무 단계).\n[대화]\n${_sceneTxt.slice(0, 1600)}` }] }) });
+            const res = await fetch(AI_API_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 60, messages: [{ role: "user", content: `다음 대화에서 두 사람이 실제 도달한 가장 진한 스킨십 단계 하나만 답해라(다른 말 금지): 없음/볼/입맞춤/깊은키스/애무/깊은애무/잠자리/임신/출산. 표현이 어떻든 의미로 판단(손잡기·포옹·친밀감은 최소 볼 수준. 목·몸에 하는 키스와 마사지는 애무 단계).\n[대화]\n${_sceneTxt.slice(0, 1600)}` }] }) });
             const dj = await res.json();
             const ans = String((dj.content || []).map((c) => c.text || "").join("")).trim();
             const ri = DATE_STAGES.findIndex((st) => ans.includes(st.name));
