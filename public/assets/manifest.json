@@ -1,0 +1,438 @@
+[
+ {
+  "file": "MAIN_STAGE_IMG.webp",
+  "bytes": 167438
+ },
+ {
+  "file": "DEBB_IMG.webp",
+  "bytes": 3374
+ },
+ {
+  "file": "LOGO__lockup.webp",
+  "bytes": 11250
+ },
+ {
+  "file": "LOGO__mark.webp",
+  "bytes": 4656
+ },
+ {
+  "file": "AVATAR_URLS__namo.webp",
+  "bytes": 37592
+ },
+ {
+  "file": "AVATAR_URLS__kiff.webp",
+  "bytes": 21054
+ },
+ {
+  "file": "AVATAR_URLS__mio.webp",
+  "bytes": 34680
+ },
+ {
+  "file": "AVATAR_URLS__saturn.webp",
+  "bytes": 25348
+ },
+ {
+  "file": "AVATAR_URLS__kylaa.webp",
+  "bytes": 23032
+ },
+ {
+  "file": "AVATAR_URLS__ruel.webp",
+  "bytes": 44564
+ },
+ {
+  "file": "AVATAR_URLS__ququ.webp",
+  "bytes": 35530
+ },
+ {
+  "file": "AVATAR_URLS__con.webp",
+  "bytes": 18884
+ },
+ {
+  "file": "AVATAR_URLS__damian.webp",
+  "bytes": 13194
+ },
+ {
+  "file": "AVATAR_URLS__magnum.webp",
+  "bytes": 17532
+ },
+ {
+  "file": "AVATAR_URLS__namho.webp",
+  "bytes": 16366
+ },
+ {
+  "file": "AVATAR_URLS__junker.webp",
+  "bytes": 11148
+ },
+ {
+  "file": "AVATAR_URLS__tinto.webp",
+  "bytes": 6246
+ },
+ {
+  "file": "AVATAR_URLS__rook.webp",
+  "bytes": 7928
+ },
+ {
+  "file": "AVATAR_URLS__gelato.webp",
+  "bytes": 9516
+ },
+ {
+  "file": "AVATAR_URLS__mokk.webp",
+  "bytes": 21840
+ },
+ {
+  "file": "AVATAR_URLS__fauve.webp",
+  "bytes": 14790
+ },
+ {
+  "file": "LOCKED_URLS__mio.webp",
+  "bytes": 34680
+ },
+ {
+  "file": "FULL_URLS__namo.webp",
+  "bytes": 37592
+ },
+ {
+  "file": "FULL_URLS__kiff.webp",
+  "bytes": 21054
+ },
+ {
+  "file": "FULL_URLS__saturn.webp",
+  "bytes": 25348
+ },
+ {
+  "file": "FULL_URLS__kylaa.webp",
+  "bytes": 23032
+ },
+ {
+  "file": "FULL_URLS__ququ.webp",
+  "bytes": 35530
+ },
+ {
+  "file": "BUST_URLS__con.webp",
+  "bytes": 18884
+ },
+ {
+  "file": "BUST_URLS__mio.webp",
+  "bytes": 34680
+ },
+ {
+  "file": "BUST_URLS__saturn.webp",
+  "bytes": 25348
+ },
+ {
+  "file": "BUST_URLS__kiff.webp",
+  "bytes": 21054
+ },
+ {
+  "file": "CHAT_BG__con.webp",
+  "bytes": 18884
+ },
+ {
+  "file": "SCENE_CG__con_date.webp",
+  "bytes": 71634
+ },
+ {
+  "file": "SCENE_CG__con_office.webp",
+  "bytes": 143226
+ },
+ {
+  "file": "SCENE_CG__con_stage.webp",
+  "bytes": 97522
+ },
+ {
+  "file": "SCENE_CG__all_stage.webp",
+  "bytes": 150932
+ },
+ {
+  "file": "SCENE_CG__con_home.webp",
+  "bytes": 41754
+ },
+ {
+  "file": "SCENE_CG__con_yacht.webp",
+  "bytes": 86670
+ },
+ {
+  "file": "SCENE_CG__con_vacation.webp",
+  "bytes": 43920
+ },
+ {
+  "file": "SCENE_CG__kiff_stage.webp",
+  "bytes": 128208
+ },
+ {
+  "file": "SCENE_CG__kylaa_stage.webp",
+  "bytes": 94094
+ },
+ {
+  "file": "SCENE_CG__con_morning.webp",
+  "bytes": 50672
+ },
+ {
+  "file": "SCENE_CG__con_intimate.webp",
+  "bytes": 18688
+ },
+ {
+  "file": "SCENE_CG__damian_home.webp",
+  "bytes": 75352
+ },
+ {
+  "file": "SCENE_CG__damian_office.webp",
+  "bytes": 47296
+ },
+ {
+  "file": "SCENE_CG__damian_date.webp",
+  "bytes": 128756
+ },
+ {
+  "file": "SCENE_CG__mokk_intimate.webp",
+  "bytes": 37322
+ },
+ {
+  "file": "SCENE_CG__mokk_stage.webp",
+  "bytes": 51056
+ },
+ {
+  "file": "SCENE_CG__fauve_intimate.webp",
+  "bytes": 47204
+ },
+ {
+  "file": "SCENE_CG__gelato_morning.webp",
+  "bytes": 48358
+ },
+ {
+  "file": "SCENE_CG__fauve_morning.webp",
+  "bytes": 53446
+ },
+ {
+  "file": "SCENE_CG__magnum_morning.webp",
+  "bytes": 47836
+ },
+ {
+  "file": "SCENE_CG__tinto_cheek.webp",
+  "bytes": 46432
+ },
+ {
+  "file": "SCENE_CG__tinto_kiss.webp",
+  "bytes": 28758
+ },
+ {
+  "file": "SCENE_CG__tinto_intimate.webp",
+  "bytes": 47006
+ },
+ {
+  "file": "SCENE_CG__fauve_date.webp",
+  "bytes": 47204
+ },
+ {
+  "file": "SCENE_CG__junker_morning.webp",
+  "bytes": 46284
+ },
+ {
+  "file": "SCENE_CG__gelato_date.webp",
+  "bytes": 51598
+ },
+ {
+  "file": "SCENE_CG__gelato_vacation.webp",
+  "bytes": 169406
+ },
+ {
+  "file": "SCENE_CG__gelato_home.webp",
+  "bytes": 75838
+ },
+ {
+  "file": "SCENE_CG__gelato_intimate.webp",
+  "bytes": 35808
+ },
+ {
+  "file": "SCENE_CG__saturn_bed.webp",
+  "bytes": 44864
+ },
+ {
+  "file": "SCENE_CG__saturn_cheek.webp",
+  "bytes": 47264
+ },
+ {
+  "file": "SCENE_CG__damian_morning.webp",
+  "bytes": 49714
+ },
+ {
+  "file": "SCENE_CG__gelato_bed.webp",
+  "bytes": 38594
+ },
+ {
+  "file": "SCENE_CG__junker_aemu.webp",
+  "bytes": 36116
+ },
+ {
+  "file": "SCENE_CG__junker_bed.webp",
+  "bytes": 46488
+ },
+ {
+  "file": "SCENE_CG__magnum_kiss.webp",
+  "bytes": 43874
+ },
+ {
+  "file": "SCENE_CG__magnum_aemu.webp",
+  "bytes": 48608
+ },
+ {
+  "file": "SCENE_CG__fauve_bed.webp",
+  "bytes": 51976
+ },
+ {
+  "file": "SCENE_CG__fauve_aemu.webp",
+  "bytes": 42160
+ },
+ {
+  "file": "SCENE_CG__all_dinner.webp",
+  "bytes": 29690
+ },
+ {
+  "file": "SCENE_CG__kiff_aemu_deep.webp",
+  "bytes": 43904
+ },
+ {
+  "file": "SCENE_CG__magnum_work.webp",
+  "bytes": 44586
+ },
+ {
+  "file": "SCENE_CG__junker_work.webp",
+  "bytes": 34632
+ },
+ {
+  "file": "SCENE_CG__gelato_bedface.webp",
+  "bytes": 77094
+ },
+ {
+  "file": "SCENE_CG__fauve_daily.webp",
+  "bytes": 144978
+ },
+ {
+  "file": "SCENE_CG__fauve_work.webp",
+  "bytes": 58454
+ },
+ {
+  "file": "SCENE_CG__gelato_daily.webp",
+  "bytes": 43314
+ },
+ {
+  "file": "SCENE_CG__mokk_daily.webp",
+  "bytes": 125292
+ },
+ {
+  "file": "SCENE_CG__mokk_work.webp",
+  "bytes": 74838
+ },
+ {
+  "file": "SCENE_CG__kiff_aemu.webp",
+  "bytes": 50550
+ },
+ {
+  "file": "SCENE_CG__kiff_kiss.webp",
+  "bytes": 37986
+ },
+ {
+  "file": "SCENE_CG__kiff_cheek.webp",
+  "bytes": 38410
+ },
+ {
+  "file": "SCENE_CG__kiff_bed.webp",
+  "bytes": 41468
+ },
+ {
+  "file": "SCENE_CG__kiff_bed2.webp",
+  "bytes": 65742
+ },
+ {
+  "file": "SCENE_CG__kiff_intimate.webp",
+  "bytes": 43240
+ },
+ {
+  "file": "SCENE_CG__mio_kiss.webp",
+  "bytes": 43472
+ },
+ {
+  "file": "SCENE_CG__mio_aemu.webp",
+  "bytes": 45136
+ },
+ {
+  "file": "SCENE_CG__mio_bed.webp",
+  "bytes": 27874
+ },
+ {
+  "file": "SCENE_CG__namo_cheek.webp",
+  "bytes": 29854
+ },
+ {
+  "file": "SCENE_CG__namo_kiss.webp",
+  "bytes": 31536
+ },
+ {
+  "file": "SCENE_CG__namo_aemu.webp",
+  "bytes": 38454
+ },
+ {
+  "file": "SCENE_CG__namo_bed.webp",
+  "bytes": 26988
+ },
+ {
+  "file": "SCENE_CG__namo_imyours.webp",
+  "bytes": 42294
+ },
+ {
+  "file": "SCENE_CG__gelato_kiss.webp",
+  "bytes": 44878
+ },
+ {
+  "file": "SCENE_CG__kylaa_cheek.webp",
+  "bytes": 47886
+ },
+ {
+  "file": "SCENE_CG__kylaa_kiss.webp",
+  "bytes": 42522
+ },
+ {
+  "file": "SCENE_CG__kylaa_aemu.webp",
+  "bytes": 52834
+ },
+ {
+  "file": "SCENE_CG__kylaa_aemu_deep.webp",
+  "bytes": 50688
+ },
+ {
+  "file": "SCENE_CG__kylaa_intimate.webp",
+  "bytes": 50540
+ },
+ {
+  "file": "SCENE_CG__kylaa_morning.webp",
+  "bytes": 42900
+ },
+ {
+  "file": "SCENE_CG__kylaa_imyours.webp",
+  "bytes": 48980
+ },
+ {
+  "file": "SCENE_CG__gelato_trip.webp",
+  "bytes": 54372
+ },
+ {
+  "file": "SCENE_CG__namo_intimate.webp",
+  "bytes": 36340
+ },
+ {
+  "file": "SCENE_CG__mio_intimate.webp",
+  "bytes": 36676
+ },
+ {
+  "file": "SCENE_CG__mio_cheek.webp",
+  "bytes": 44282
+ },
+ {
+  "file": "OFFICE_HOME.webp",
+  "bytes": 106276
+ },
+ {
+  "file": "MAIN_BG_IMG.webp",
+  "bytes": 75854
+ }
+]
