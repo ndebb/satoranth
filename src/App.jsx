@@ -21,6 +21,7 @@ const ASSET_LOCAL = "/assets";
 const _onVercel = typeof location !== "undefined" && /satoranth\.vercel\.app$/.test(location.hostname);
 const ASSET = _onVercel ? ASSET_LOCAL : ASSET_RAW;   // 아티팩트=raw, 배포본=동일 도메인. 막히면 onError가 jsDelivr로 전환
 const A = (f) => `${ASSET}/${f}`;   // HQ123: 인라인 base64 → 파일 참조
+const V = (f) => `${_onVercel ? ASSET_LOCAL : ASSET_CDN}/${f}`; // 영상은 CDN이 video/mp4 MIME을 보장
 // 이미지가 안 뜨면 다른 호스트로 1회 자동 재시도
 const imgFallback = (e) => {
   try {
@@ -453,7 +454,7 @@ const SCENE_CG = {
   saturn_cheek: A("SCENE_CG__saturn_cheek.webp"),
   damian_morning: A("SCENE_CG__damian_morning.webp"),
   gelato_bed: A("SCENE_CG__gelato_bed.webp"),
-  junker_aemu: A("SCENE_CG__junker_aemu.mp4"),
+  junker_aemu: V("SCENE_CG__junker_aemu.mp4"),
   junker_aemu_deep: A("SCENE_CG__junker_aemu_deep.jpg"),
   junker_bed: A("SCENE_CG__junker_bed.webp"),
   junker_intimate: A("SCENE_CG__junker_intimate.jpg"),
