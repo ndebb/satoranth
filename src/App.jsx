@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import * as Tone from "tone";
 
 // 이미지 호스팅 — GitHub(public) + jsDelivr CDN. 주소만 바꾸면 호스트 교체 가능
-const BUILD_TAG = "B53-HQ128";
+const BUILD_TAG = "B55-HQ132";
 const AI_API_ENDPOINT = (typeof window !== "undefined" && /\.vercel\.app$/i.test(window.location.hostname))
   ? "/api/chat"
   : "https://api.anthropic.com/v1/messages";
@@ -456,7 +456,9 @@ const SCENE_CG = {
   gelato_bed: A("SCENE_CG__gelato_bed.webp"),
   junker_aemu: V("SCENE_CG__junker_aemu.mp4"),
   junker_aemu_deep: A("SCENE_CG__junker_aemu_deep.jpg"),
+  junker_aemu_deep2: A("SCENE_CG__junker_aemu_deep.webp"),
   junker_bed: A("SCENE_CG__junker_bed.webp"),
+  junker_bed2: A("SCENE_CG__junker_bed2.webp"),
   junker_intimate: A("SCENE_CG__junker_intimate.jpg"),
   special_tinto_junker_intimate: A("SCENE_CG__special_tinto_junker_intimate.jpg"),
   magnum_kiss: A("SCENE_CG__magnum_kiss.webp"),
@@ -1171,6 +1173,7 @@ function SatoranthGame() {
   const [lightsOff, setLightsOff] = useState(null); // 🌙 소등 연출 중인 방 id
   const [dateBg, setDateBg] = useState(null); // 💘 씬 배경 슬라이드쇼 {room, imgs:[], idx}
   const bgTimer = useRef(null);
+  const bgIdxRef = useRef(0);
   // 씬 배경 이미지 풀 자동 순환 시작
   // 커플이 특정 단계에 도달하면 한쪽이 먼저 관계를 제안한다 (사귀자 → 약혼하자 → 결혼하자)
   const proposeIfMilestone = (roomId, k1, k2, stageName) => {
@@ -1201,22 +1204,38 @@ function SatoranthGame() {
     }
   };
   const startBgShow = (roomId, imgs, autoRotate) => {
-    if (bgTimer.current) clearInterval(bgTimer.current);
+    if (bgTimer.current) {
+      clearInterval(bgTimer.current);
+      clearTimeout(bgTimer.current);
+    }
     // 중복 제거하되 keys(원본 인덱스)와 imgs 인덱스를 항상 일치시킨다 (전엔 Set으로 imgs만 줄어 keys와 어긋남)
     const seen = new Set(), pool = [];
     (imgs || []).filter(Boolean).forEach((u) => { if (!seen.has(u)) { seen.add(u); pool.push(u); } });
     if (!pool.length) { setDateBg(null); return; }
     setDateBg({ room: roomId, imgs: pool, idx: 0, keys: pool.slice() });
     // 베드씬만 자동 순환(침실컷들이라 무드 연속) — 데이트 씬은 키워드 전환이라 autoRotate=false
-    if (autoRotate && pool.length > 1) bgTimer.current = setInterval(() => { setDateBg((p) => p && p.room === roomId && p.imgs.length > 1 ? { ...p, idx: (p.idx + 1) % p.imgs.length } : p); }, 6000);
+    if (autoRotate && pool.length > 1) {
+      const step = () => {
+        setDateBg((p) => {
+          if (!p || p.room !== roomId || p.imgs.length <= 1) return p;
+          return { ...p, idx: (p.idx + 1) % p.imgs.length };
+        });
+        bgIdxRef.current = (bgIdxRef.current + 1) % pool.length;
+        bgTimer.current = setTimeout(step, isVideoAsset(pool[bgIdxRef.current]) ? 12000 : 6000);
+      };
+      bgIdxRef.current = 0;
+      bgTimer.current = setTimeout(step, isVideoAsset(pool[0]) ? 12000 : 6000);
+    }
   };
   // 씬 대사에 장면 전환어가 나오면 해당 배경으로 스위치 (참가자별 씬 이미지)
   const bgSwitchByText = (roomId, ids, line, stageIndex = null) => {
     const t = String(line || "");
+    let _namedSceneIds = [];
     // 텍스트에 캐릭터 이름이 지목되면 그 캐릭터의 씬 컷을 우선 (예: "미오 침대" → 미오 세트)
     try {
       const _KRN = { mio: ["미오", "mio", "MIO"], kylaa: ["카일라", "kylaa", "KYLAA"], namo: ["나모", "namo", "NAMO"], kiff: ["키프", "kiff", "KIFF"], gelato: ["젤라토", "젤라또", "gelato", "GELATO"], tinto: ["틴토", "tinto", "TINTO"], mokk: ["모크", "mokk", "MOKK"], saturn: ["새턴", "saturn"], ruel: ["루엘", "ruel"], con: ["콘스탄틴", "콘", "con"], namho: ["남호", "팬텀", "namho"], sora: ["소라", "sora"], fauve: ["포브", "fauve"], magnum: ["매그넘", "magnum"], aegis: ["이지스", "aegis"], atlas: ["아틀라스", "atlas"], junker: ["융커", "junker"], rook: ["룩", "rook"], damian: ["데미안", "damian"] };
       const _named = (ids || []).filter((g) => (_KRN[g] || [CHARS[g]?.name]).some((nm) => nm && t.includes(nm)));
+      _namedSceneIds = _named;
       if (_named.length) ids = [..._named, ...(ids || []).filter((g) => !_named.includes(g))];
     } catch {}
     const RULES = [
@@ -1229,6 +1248,8 @@ function SatoranthGame() {
       { sfx: "_bed", kw: ["침대", "이불", "불 꺼", "불을 끄", "불이 꺼", "누워", "눕", "아침", "눈을 뜨", "다음 날", "다음날", "잠에서", "나른", "여운"] },
       { sfx: "_intimate", kw: ["침대", "이불", "불 꺼", "불을 끄", "불이 꺼", "누워", "안겨", "품에"] },
       { sfx: "_morning", kw: ["아침", "해가", "눈을 뜨", "다음 날", "다음날", "잠에서", "나른", "여운", "포근하게 안", "잠들었"] },
+      { sfx: "_cook", kw: ["요리", "아침 차", "아침을 차", "차려", "밥을 짓", "주방", "부엌", "팬케이크", "커피를 내", "커피 내", "식사를 준비", "앞치마"] },
+      { sfx: "_exer", kw: ["운동", "헬스", "턱걸이", "근력", "트레이닝", "스트레칭", "조깅", "달리기", "땀에 젖", "땀을 흘"] },
       { sfx: "_home", kw: ["집", "거실", "소파", "우리 집", "현관"] },
       { sfx: "_dinner", kw: ["디너", "만찬", "갈라", "연회", "정찬", "리셉션"] },
       { sfx: "_date", kw: ["카페", "레스토랑", "저녁", "식사", "거리", "산책", "데이트"] },
@@ -1239,26 +1260,29 @@ function SatoranthGame() {
       { sfx: "_office", kw: ["사무실", "오피스", "회의", "책상"] },
     ];
     // 씬 타입별 대체 후보 — 해당 이미지가 없는 캐릭터(예: 젤라토는 intimate 없음)는 비슷한 씬으로 폴백
-    const FALLBACK = { "_bedface": ["_intimate", "_bed", "_kiss"], "_bed": ["_intimate", "_aemu_deep", "_morning"], "_intimate": ["_bed", "_home", "_morning"], "_kiss": ["_cheek", "_date", "_bed"], "_cheek": ["_kiss", "_date"], "_aemu": ["_aemu_deep", "_kiss", "_bed"], "_aemu_deep": ["_aemu", "_bed", "_intimate"], "_morning": ["_home", "_intimate", "_date"], "_home": ["_date", "_morning"], "_vacation": ["_trip", "_date"], "_trip": ["_vacation", "_date"], "_work": ["_office", "_stage", "_daily"], "_stage": ["_work", "_office", "_date"], "_office": ["_work", "_stage", "_date"], "_date": ["_home", "_morning"] };
+    const FALLBACK = { "_cook": ["_home", "_morning", "_daily", "_date"], "_exer": ["_work", "_stage", "_daily"], "_bedface": ["_intimate", "_bed", "_kiss"], "_bed": ["_intimate", "_aemu_deep", "_morning"], "_intimate": ["_bed", "_home", "_morning"], "_kiss": ["_cheek", "_date", "_bed"], "_cheek": ["_kiss", "_date"], "_aemu": ["_aemu_deep", "_kiss", "_bed"], "_aemu_deep": ["_aemu", "_bed", "_intimate"], "_morning": ["_home", "_intimate", "_date"], "_home": ["_date", "_morning"], "_vacation": ["_trip", "_date"], "_trip": ["_vacation", "_date"], "_work": ["_office", "_stage", "_daily"], "_stage": ["_work", "_office", "_date"], "_office": ["_work", "_stage", "_date"], "_date": ["_home", "_morning"] };
     // 💳 수위 컷 가챠 잠금 — 단계가 높을수록 희귀 카드 필요: B급(55%)=애무·애프터 / A급(33%)=깊은애무·침대 / S급(12%)=잠자리·표정·imyours
     const SFX_TIER = { "_aemu": 0, "_morning": 0, "_aemu_deep": 1, "_bed": 1, "_intimate": 2, "_bedface": 2, "_imyours": 2 };
     const _tierOf = (gid) => { try { const m0 = metaRef.current || meta; const cg = (m0.cardGradeMax || {})[gid]; if (cg != null) return cg; return Object.keys(m0.photoCards || {}).some((k) => k.startsWith(gid + "-")) ? 0 : -1; } catch { return -1; } }; // 기존 보유자는 B급 소급
     const _testFree = !!((metaRef.current || meta).testObey); // 테스트 모드면 잠금 전부 해제
     const _hasCard = (gid) => _testFree || _tierOf(gid) >= 0;
     let _lockedHit = false, _lockedNeed = -1;
-    // 융커 전용 진행 컷. 단계 번호를 받은 경우 텍스트보다 우선하므로
-    // "침대에서 애무" 같은 문장도 실제 관계 단계에 맞는 장면을 정확히 고른다.
+    // 융커 전용 진행 컷. 단계 번호뿐 아니라 실제 대사 키워드에도 즉시 반응한다.
+    // 단체방에서는 융커가 대사에 직접 지목된 경우만 반응해 다른 커플의 장면과 섞이지 않는다.
     const _sceneIds = Array.isArray(ids) ? ids : [];
-    if (_sceneIds.includes("junker")) {
-      const _hasTinto = _sceneIds.includes("tinto");
-      const _explicitIntimate = /(잠자리|섹스|성관계)/.test(t);
-      const _explicitDeep = /(깊은애무|가슴|탈의|벗|달아올)/.test(t);
-      const _explicitAemu = /(애무|쓰다듬|몸을 더듬|목덜미|마사지)/.test(t);
+    const _isTwoPersonScene = _sceneIds.length === 2;
+    const _junkerRelevant = _sceneIds.includes("junker") && (_sceneIds.length <= 2 || _namedSceneIds.includes("junker"));
+    if (_junkerRelevant) {
+      const _namedJunkerTinto = _namedSceneIds.includes("junker") && _namedSceneIds.includes("tinto") && _namedSceneIds.length === 2;
+      const _hasTinto = (_isTwoPersonScene && _sceneIds.includes("tinto")) || _namedJunkerTinto;
+      const _explicitIntimate = /(잠자리|섹스|성관계|관계를 맺|몸을 겹|하나가 되|밤을 함께|끝까지 가|삽입|절정|오르가즘|침대가 흔들|리듬을 타|깊이 받아|서로를 받아)/.test(t);
+      const _explicitDeep = /(깊은애무|깊은 애무|가슴|탈의|벗|셔츠를 풀|단추를 풀|옷을 내리|맨몸|달아올|숨이 가|숨결이 거칠|손이 더 아래|허벅지 안쪽)/.test(t);
+      const _explicitAemu = /(애무|쓰다듬|몸을 더듬|허리를 감|목덜미|끌어안|안겨|안았|품에|목에 입|목에 키|목을 따라|몸에 입|마사지|주물러|주무르|어깨를 주|맨살|손길|몸을 어루만|입술이 목|쇄골|등을 쓸어)/.test(t);
       const _junkerStage = Number.isInteger(stageIndex)
         ? stageIndex
         : (_explicitIntimate ? 6 : _explicitDeep ? 5 : _explicitAemu ? 4 : null);
       let _junkerAsset = null, _junkerNeed = -1;
-      if (_junkerStage >= 6) {
+      if (_junkerStage === 6) {
         _junkerAsset = _hasTinto ? SCENE_CG.special_tinto_junker_intimate : SCENE_CG.junker_intimate;
         _junkerNeed = 2;
       } else if (_junkerStage === 5) {
@@ -1270,8 +1294,14 @@ function SatoranthGame() {
       }
       if (_junkerAsset) {
         const _pairTier = Math.max(..._sceneIds.map((g) => _tierOf(g)), -1);
-        if (_testFree || _pairTier >= _junkerNeed) {
-          if (bgTimer.current) clearInterval(bgTimer.current);
+        // 개인 테스트: 실제 대화에서 키워드가 나온 장면은 카드 등급과 무관하게 즉시 표시.
+        // 숫자 단계 자동 승급으로 들어온 경우에는 기존 B/A/S 카드 잠금을 그대로 유지한다.
+        const _dialogueTriggered = !Number.isInteger(stageIndex);
+        if (_dialogueTriggered || _testFree || _pairTier >= _junkerNeed) {
+          if (bgTimer.current) {
+            clearInterval(bgTimer.current);
+            clearTimeout(bgTimer.current);
+          }
           setDateBg({ room: roomId, imgs: [_junkerAsset], keys: [_junkerAsset], idx: 0 });
           setCineScene(roomId);
           setVnStory(true);
@@ -1432,7 +1462,7 @@ function SatoranthGame() {
 
   useEffect(() => { metaRef.current = meta; }, [meta]);
   useEffect(() => { chatsRef.current = chats; }, [chats]);
-  useEffect(() => { setDateBg(null); setCineScene(null); setVnStory(false); setDateHud(null); if (bgTimer.current) clearInterval(bgTimer.current);
+  useEffect(() => { setDateBg(null); setCineScene(null); setVnStory(false); setDateHud(null); if (bgTimer.current) { clearInterval(bgTimer.current); clearTimeout(bgTimer.current); }
     // 2인 커플 방은 입장만 해도 관계가 오른다 — "소개팅 시키자" 없이 함께 있는 것 자체가 만남
     try {
       if (room && !MULTI(room)) {
@@ -2371,13 +2401,26 @@ function SatoranthGame() {
         : "생활 연기다. 감정의 결을 섬세하게.";
       if (["베드", "키스", "격투"].includes(_g)) {
         try {
-          const _sfxG = _g === "베드" ? ["_intimate", "_morning", "_home"] : _g === "키스" ? ["_date", "_morning", "_intimate"] : ["_stage", "_office"];
-          const _perChar = gs.map((g) => { const arr = []; _sfxG.forEach((sf) => { if (SCENE_CG[g + sf]) arr.push(SCENE_CG[g + sf]); }); return arr; }).filter((a) => a.length);
-          const _poolG = [];
-          const _maxLen = _perChar.length ? Math.max(..._perChar.map((a) => a.length)) : 0;
-          for (let k = 0; k < _maxLen; k++) _perChar.forEach((arr) => { if (arr[k]) _poolG.push(arr[k]); });
-          if (!_poolG.length && SCENE_CG.all_stage) _poolG.push(SCENE_CG.all_stage);
-          startBgShow(room, _poolG, _g === "베드");
+          const _isTintoJunkerBed = _g === "베드" && gs.includes("tinto") && gs.includes("junker");
+          if (_isTintoJunkerBed && SCENE_CG.special_tinto_junker_intimate) {
+            // 베드씬 버튼은 키워드 전환보다 먼저 배경을 잡으므로 커플 전용 컷을 여기서 직접 우선한다.
+            startBgShow(room, [SCENE_CG.special_tinto_junker_intimate], false);
+          } else {
+            const _sfxG = _g === "베드" ? ["_bed", "_intimate", "_bedface", "_aemu_deep", "_aemu", "_morning", "_home"] : _g === "키스" ? ["_kiss", "_cheek", "_aemu", "_date", "_morning", "_intimate"] : ["_stage", "_office", "_exer", "_work"];
+            const _perChar = gs.map((g) => {
+              const arr = [];
+              _sfxG.forEach((sf) => {
+                if (SCENE_CG[g + sf]) arr.push(SCENE_CG[g + sf]);
+                for (let v = 2; v <= 6; v++) if (SCENE_CG[g + sf + v]) arr.push(SCENE_CG[g + sf + v]);
+              });
+              return arr;
+            }).filter((a) => a.length);
+            const _poolG = [];
+            const _maxLen = _perChar.length ? Math.max(..._perChar.map((a) => a.length)) : 0;
+            for (let k = 0; k < _maxLen; k++) _perChar.forEach((arr) => { if (arr[k]) _poolG.push(arr[k]); });
+            if (!_poolG.length && SCENE_CG.all_stage) _poolG.push(SCENE_CG.all_stage);
+            startBgShow(room, _poolG, _g === "베드");
+          }
         } catch {}
         setCineScene(room);
       }
@@ -2500,7 +2543,7 @@ function SatoranthGame() {
       const nxt = DATE_STAGES[Math.min(cur + 1, DATE_STAGES.length - 1)];
       const n1 = CHARS[k1]?.name, n2 = CHARS[k2]?.name;
       const tp1 = CHAR_TYPES[k1], tp2 = CHAR_TYPES[k2];
-      const _sfx = ["_date", "_morning", "_vacation", "_home", "_trip", "_yacht", "_stage", "_office"];
+      const _sfx = ["_date", "_morning", "_vacation", "_home", "_trip", "_yacht", "_stage", "_office", "_cook", "_exer", "_daily", "_cheek", "_kiss"];
       const _pool = [];
       _sfx.forEach((sf) => { if (SCENE_CG[k1 + sf]) _pool.push(SCENE_CG[k1 + sf]); if (SCENE_CG[k2 + sf]) _pool.push(SCENE_CG[k2 + sf]); });
       if (!_pool.length && SCENE_CG.all_stage) _pool.push(SCENE_CG.all_stage);
