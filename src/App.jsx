@@ -2059,7 +2059,7 @@ function SatoranthGame() {
         const hdrs = { "Content-Type":"application/json", "anthropic-version":"2023-06-01", "anthropic-dangerous-direct-browser-access":"true" };
         if (apiKey) hdrs["x-api-key"] = apiKey;
         const response = await Promise.race([
-          fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: hdrs, body }),
+          fetch("/api/chat", { method: "POST", headers: hdrs, body }),
           new Promise((_, rej) => setTimeout(() => rej(new Error("타임아웃 25초")), 25000)),
         ]);
         if (!response.ok) { let bodyTxt = ""; try { bodyTxt = (await response.text()).slice(0, 140); } catch {} lastErr = "HTTP " + response.status + (bodyTxt ? " · " + bodyTxt : ""); const st = response.status; if (st === 429 || st === 503 || st === 403 || st === 500 || st === 529) { await new Promise((r) => setTimeout(r, 1500 * (attempt + 1) + Math.random() * 700)); } continue; }
@@ -2222,7 +2222,7 @@ function SatoranthGame() {
       const prev = (metaRef.current.memNotes || {})[roomId] || "";
       const convo = hist.slice(-24).map((m) => (m.r === "u" ? "디렉터" : (CHARS[m.id]?.name || CHARS[roomId]?.name || "상대")) + ": " + m.t).join("\n");
       const prompt = "다음은 사용자(디렉터, 회사 CEO)와 캐릭터의 대화다. 이 캐릭터가 '앞으로도 반드시 기억해야 할 사실'만 3~6줄로 압축해라. 특히 업무 지시·결정·수치·약속·디렉터의 개인 상황(고민, 인간관계 등)을 우선한다. 잡담은 버려라. 기존 기억에 새 사실만 갱신해서 통합하라. 기존 기억: [" + (prev || "없음") + "] 최근 대화: [" + convo + "] 갱신된 기억만 출력(설명·머리말 없이):";
-      const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true", ...(apiKey ? { "x-api-key": apiKey } : {}) }, body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 400, messages: [{ role: "user", content: prompt }] }) });
+      const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true", ...(apiKey ? { "x-api-key": apiKey } : {}) }, body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 400, messages: [{ role: "user", content: prompt }] }) });
       if (!res.ok) return;
       const d = await res.json();
       const note = (d?.content || []).map((x) => x.text || "").join("").trim();
@@ -2260,7 +2260,7 @@ function SatoranthGame() {
         ? "다음 대화를 표로 정리해라. 형식은 각 줄을 '항목 | 내용' 으로 쓰고, 맨 위에 '구분 | 내용' 헤더 한 줄을 둔다. 쟁점·각자 주장·합의된 것·미결 사항을 항목으로 잡아라. 표 외의 설명은 붙이지 마라.\n\n[대화]\n" + convo
         : "다음 대화에서 누구 말이 더 타당한지 판정해라. 출력 형식은 정확히 이 4줄:\n쟁점: (한 줄)\n각자 주장: (이름 - 요지, 이름 - 요지)\n판정: (누구 손을 들어주는지, 비긴다면 비김)\n이유: (두 문장 이내, 근거 중심)\n\n[대화]\n" + convo;
       let apiKey = ""; try { apiKey = localStorage.getItem("factory:apikey") || ""; } catch {}
-      const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true", ...(apiKey ? { "x-api-key": apiKey } : {}) }, body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 700, system: sys, messages: [{ role: "user", content: prompt }] }) });
+      const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true", ...(apiKey ? { "x-api-key": apiKey } : {}) }, body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 700, system: sys, messages: [{ role: "user", content: prompt }] }) });
       if (!res.ok) throw new Error("judge " + res.status);
       const d = await res.json();
       const out = (d?.content || []).map((x) => x.text || "").join("").trim();
@@ -2358,7 +2358,7 @@ function SatoranthGame() {
       }
       try {
         let apiKey = ""; try { apiKey = localStorage.getItem("factory:apikey") || ""; } catch {}
-        const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true", ...(apiKey ? { "x-api-key": apiKey } : {}) }, body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 300, system: "너는 냉정한 연기 심사위원이다. 후하게 주지 마라. 마크다운 금지.", messages: [{ role: "user", content: `아래 즉흥 연기를 채점해라.\n상황: ${sceneCard}\n\n[연기]\n${after}\n\n출력 형식은 정확히 3줄:\n점수: (0~100 숫자만)\n좋았던 점: (한 줄)\n다음 과제: (한 줄)` }] }) });
+        const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true", ...(apiKey ? { "x-api-key": apiKey } : {}) }, body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 300, system: "너는 냉정한 연기 심사위원이다. 후하게 주지 마라. 마크다운 금지.", messages: [{ role: "user", content: `아래 즉흥 연기를 채점해라.\n상황: ${sceneCard}\n\n[연기]\n${after}\n\n출력 형식은 정확히 3줄:\n점수: (0~100 숫자만)\n좋았던 점: (한 줄)\n다음 과제: (한 줄)` }] }) });
         if (res.ok) {
           const d = await res.json();
           review = (d?.content || []).map((x) => x.text || "").join("").trim();
@@ -2471,7 +2471,7 @@ function SatoranthGame() {
       let d12 = 5 + Math.floor(Math.random() * 4), d21 = 5 + Math.floor(Math.random() * 4), why = "", doneTry = false, _reachedStage = -1;
       try {
         let apiKey = ""; try { apiKey = localStorage.getItem("factory:apikey") || ""; } catch {}
-        const resJ = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true", ...(apiKey ? { "x-api-key": apiKey } : {}) }, body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 200, messages: [{ role: "user", content: `다음 데이트 대화를 읽고 채점해라. JSON만 출력하고 다른 말은 하지 마라: {"a":0~8 정수,"b":0~8 정수,"reached":"단계명","why":"한 줄 코멘트"}\na = ${n1}→${n2} 오른 호감 / b = ${n2}→${n1} 오른 호감\nreached = 이 씬에서 두 사람이 실제로 도달한 가장 진한 스킨십 단계를 다음 중 하나로 골라라(대사·지문을 읽고 표현이 어떻든 의미로 판단): 없음/볼/입맞춤/깊은키스/애무/깊은애무/잠자리/임신/출산. 예: "입술이 부드러웠다"·"입 맞췄다"·"입술이 포개졌다"·"입술 부드러워요" 등은 모두 입맞춤 이상. 확실히 그 행동이 묘사·암시됐으면 그 단계로, 아니면 없음.\n\n[대화]\n${String(_t2 || text || "").slice(0, 3000)}` }] }) });
+        const resJ = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true", ...(apiKey ? { "x-api-key": apiKey } : {}) }, body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 200, messages: [{ role: "user", content: `다음 데이트 대화를 읽고 채점해라. JSON만 출력하고 다른 말은 하지 마라: {"a":0~8 정수,"b":0~8 정수,"reached":"단계명","why":"한 줄 코멘트"}\na = ${n1}→${n2} 오른 호감 / b = ${n2}→${n1} 오른 호감\nreached = 이 씬에서 두 사람이 실제로 도달한 가장 진한 스킨십 단계를 다음 중 하나로 골라라(대사·지문을 읽고 표현이 어떻든 의미로 판단): 없음/볼/입맞춤/깊은키스/애무/깊은애무/잠자리/임신/출산. 예: "입술이 부드러웠다"·"입 맞췄다"·"입술이 포개졌다"·"입술 부드러워요" 등은 모두 입맞춤 이상. 확실히 그 행동이 묘사·암시됐으면 그 단계로, 아니면 없음.\n\n[대화]\n${String(_t2 || text || "").slice(0, 3000)}` }] }) });
         if (resJ.ok) {
           const dj = await resJ.json();
           const out = (dj?.content || []).map((x) => x.text || "").join("");
@@ -2830,7 +2830,7 @@ function SatoranthGame() {
         (async () => {
           try {
             if (_sceneTxt.length < 8) return;
-            const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 60, messages: [{ role: "user", content: `다음 대화에서 두 사람이 실제 도달한 가장 진한 스킨십 단계 하나만 답해라(다른 말 금지): 없음/볼/입맞춤/깊은키스/애무/깊은애무/잠자리/임신/출산. 표현이 어떻든 의미로 판단(손잡기·포옹·친밀감은 최소 볼 수준. 목·몸에 하는 키스와 마사지는 애무 단계).\n[대화]\n${_sceneTxt.slice(0, 1600)}` }] }) });
+            const res = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 60, messages: [{ role: "user", content: `다음 대화에서 두 사람이 실제 도달한 가장 진한 스킨십 단계 하나만 답해라(다른 말 금지): 없음/볼/입맞춤/깊은키스/애무/깊은애무/잠자리/임신/출산. 표현이 어떻든 의미로 판단(손잡기·포옹·친밀감은 최소 볼 수준. 목·몸에 하는 키스와 마사지는 애무 단계).\n[대화]\n${_sceneTxt.slice(0, 1600)}` }] }) });
             const dj = await res.json();
             const ans = String((dj.content || []).map((c) => c.text || "").join("")).trim();
             const ri = DATE_STAGES.findIndex((st) => ans.includes(st.name));
