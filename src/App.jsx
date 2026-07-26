@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import * as Tone from "tone";
 
 // 이미지 호스팅 — GitHub(public) + jsDelivr CDN. 주소만 바꾸면 호스트 교체 가능
-const BUILD_TAG = "B52-HQ127";
+const BUILD_TAG = "B53-HQ128";
 const AI_API_ENDPOINT = (typeof window !== "undefined" && /\.vercel\.app$/i.test(window.location.hostname))
   ? "/api/chat"
   : "https://api.anthropic.com/v1/messages";
@@ -29,6 +29,7 @@ const imgFallback = (e) => {
     el.src = src.includes("cdn.jsdelivr.net") ? src.replace(ASSET_CDN, ASSET_RAW) : src.replace(ASSET_RAW, ASSET_CDN);
   } catch {}
 };
+const isVideoAsset = (src) => /\.(mp4|webm|mov)(?:[?#].*)?$/i.test(String(src || ""));
 // 더 빠른 CDN을 쓰려면 위 줄을 아래로 교체 (jsDelivr는 브랜치 캐시가 있어 교체 반영이 늦을 수 있음)
 // const ASSET = "https://cdn.jsdelivr.net/gh/ndebb/kpopwitch@profile/satoranth-deploy/public/assets";
 
@@ -452,8 +453,11 @@ const SCENE_CG = {
   saturn_cheek: A("SCENE_CG__saturn_cheek.webp"),
   damian_morning: A("SCENE_CG__damian_morning.webp"),
   gelato_bed: A("SCENE_CG__gelato_bed.webp"),
-  junker_aemu: A("SCENE_CG__junker_aemu.webp"),
+  junker_aemu: A("SCENE_CG__junker_aemu.mp4"),
+  junker_aemu_deep: A("SCENE_CG__junker_aemu_deep.jpg"),
   junker_bed: A("SCENE_CG__junker_bed.webp"),
+  junker_intimate: A("SCENE_CG__junker_intimate.jpg"),
+  special_tinto_junker_intimate: A("SCENE_CG__special_tinto_junker_intimate.jpg"),
   magnum_kiss: A("SCENE_CG__magnum_kiss.webp"),
   magnum_aemu: A("SCENE_CG__magnum_aemu.webp"),
   fauve_bed: A("SCENE_CG__fauve_bed.webp"),
@@ -1206,7 +1210,7 @@ function SatoranthGame() {
     if (autoRotate && pool.length > 1) bgTimer.current = setInterval(() => { setDateBg((p) => p && p.room === roomId && p.imgs.length > 1 ? { ...p, idx: (p.idx + 1) % p.imgs.length } : p); }, 6000);
   };
   // 씬 대사에 장면 전환어가 나오면 해당 배경으로 스위치 (참가자별 씬 이미지)
-  const bgSwitchByText = (roomId, ids, line) => {
+  const bgSwitchByText = (roomId, ids, line, stageIndex = null) => {
     const t = String(line || "");
     // 텍스트에 캐릭터 이름이 지목되면 그 캐릭터의 씬 컷을 우선 (예: "미오 침대" → 미오 세트)
     try {
@@ -1241,6 +1245,41 @@ function SatoranthGame() {
     const _testFree = !!((metaRef.current || meta).testObey); // 테스트 모드면 잠금 전부 해제
     const _hasCard = (gid) => _testFree || _tierOf(gid) >= 0;
     let _lockedHit = false, _lockedNeed = -1;
+    // 융커 전용 진행 컷. 단계 번호를 받은 경우 텍스트보다 우선하므로
+    // "침대에서 애무" 같은 문장도 실제 관계 단계에 맞는 장면을 정확히 고른다.
+    const _sceneIds = Array.isArray(ids) ? ids : [];
+    if (_sceneIds.includes("junker")) {
+      const _hasTinto = _sceneIds.includes("tinto");
+      const _explicitIntimate = /(잠자리|섹스|성관계)/.test(t);
+      const _explicitDeep = /(깊은애무|가슴|탈의|벗|달아올)/.test(t);
+      const _explicitAemu = /(애무|쓰다듬|몸을 더듬|목덜미|마사지)/.test(t);
+      const _junkerStage = Number.isInteger(stageIndex)
+        ? stageIndex
+        : (_explicitIntimate ? 6 : _explicitDeep ? 5 : _explicitAemu ? 4 : null);
+      let _junkerAsset = null, _junkerNeed = -1;
+      if (_junkerStage >= 6) {
+        _junkerAsset = _hasTinto ? SCENE_CG.special_tinto_junker_intimate : SCENE_CG.junker_intimate;
+        _junkerNeed = 2;
+      } else if (_junkerStage === 5) {
+        _junkerAsset = SCENE_CG.junker_aemu_deep;
+        _junkerNeed = 1;
+      } else if (_junkerStage === 4) {
+        _junkerAsset = SCENE_CG.junker_aemu;
+        _junkerNeed = 0;
+      }
+      if (_junkerAsset) {
+        const _pairTier = Math.max(..._sceneIds.map((g) => _tierOf(g)), -1);
+        if (_testFree || _pairTier >= _junkerNeed) {
+          if (bgTimer.current) clearInterval(bgTimer.current);
+          setDateBg({ room: roomId, imgs: [_junkerAsset], keys: [_junkerAsset], idx: 0 });
+          setCineScene(roomId);
+          setVnStory(true);
+          return;
+        }
+        _lockedHit = true;
+        _lockedNeed = Math.max(_lockedNeed, _junkerNeed);
+      }
+    }
     for (const r of RULES) {
       if (r.kw.some((k) => t.includes(k))) {
         for (const g of ids) {
@@ -2529,6 +2568,10 @@ function SatoranthGame() {
       setChats((p) => ({ ...p, [room]: done }));
       persistChat(room, done);
       if (up) { setBanner({ text: `\uD83D\uDC9E ${n1} × ${n2} — ${DATE_STAGES[ns].name}`, sub: "관계가 한 단계 깊어졌어" }); celebrate(20); setTimeout(() => setBanner(null), 2400); try { proposeIfMilestone(room, k1, k2, DATE_STAGES[ns].name); } catch {} }
+      if (up) {
+        const _SKW = { 1: "볼에", 2: "입맞춤", 3: "키스", 4: "애무", 5: "가슴", 6: "침대", 7: "임신", 8: "출산" };
+        if (_SKW[ns]) bgSwitchByText(room, [k1, k2], _SKW[ns], ns);
+      }
       if (up && DATE_STAGES[ns].name === "출산") {
         // 커플 아이 실제 등록 (kids[커플키]) — 스킨십·데이트로 게이지 쌓아 아이까지 도달한 결과가 데이터에 남는다
         const _ckey = key;
@@ -2837,7 +2880,7 @@ function SatoranthGame() {
           }
         }
         // 단계가 실제로 올라갔으면 그 단계의 씬 배경을 직접 켠다 (키워드 없이 승급해도 이미지가 뜨게)
-        if (ns > cur) { const _SKW = { 1: "볼에", 2: "입맞춤", 3: "키스", 4: "애무", 5: "가슴", 6: "침대", 7: "임신", 8: "출산" }; if (_SKW[ns]) bgSwitchByText(roomId, _pair, _SKW[ns]); }
+        if (ns > cur) { const _SKW = { 1: "볼에", 2: "입맞춤", 3: "키스", 4: "애무", 5: "가슴", 6: "침대", 7: "임신", 8: "출산" }; if (_SKW[ns]) bgSwitchByText(roomId, _pair, _SKW[ns], ns); }
         // 모델 채점 보정(비동기) — 키워드가 못 잡는 표현("친해진 것 같아요"·포옹 등)도 의미로 판단해 뒤따라 반영
         (async () => {
           try {
@@ -2857,7 +2900,7 @@ function SatoranthGame() {
                 persistMeta((prev) => ({ ...prev, dates: { ...(prev.dates || {}), [ck]: { p12: q1, p21: q2, stage: ns2, at: Date.now() } }, ...(ns2 >= 3 ? { ships: { ...(prev.ships || {}), [ck]: 1 } } : {}) }));
                 setDateHud({ room: roomId, key: ck, k1: ka, k2: kb, n1: CHARS[ka]?.name, n2: CHARS[kb]?.name, p12: q1, p21: q2, cur: ns2, target: ns2 < DATE_STAGES.length - 1 ? DATE_STAGES[ns2 + 1].name : null });
                 try { proposeIfMilestone(roomId, ka, kb, DATE_STAGES[ns2].name); } catch {}
-                if (ns2 > c1) { const _SKW = { 1: "볼에", 2: "입맞춤", 3: "키스", 4: "애무", 5: "가슴", 6: "침대", 7: "임신", 8: "출산" }; if (_SKW[ns2]) bgSwitchByText(roomId, [ka, kb], _SKW[ns2]); }
+                if (ns2 > c1) { const _SKW = { 1: "볼에", 2: "입맞춤", 3: "키스", 4: "애무", 5: "가슴", 6: "침대", 7: "임신", 8: "출산" }; if (_SKW[ns2]) bgSwitchByText(roomId, [ka, kb], _SKW[ns2], ns2); }
               }
             }
           } catch {}
@@ -5474,8 +5517,29 @@ function SatoranthGame() {
             )}
             {((cineScene === room) || (dateBg && dateBg.room === room) || (meta.roomBg || {})[room] || (!MULTI(room) && AVATAR_URLS[room])) && (
               <div style={{ position:"absolute", top: topH, left:0, right:0, bottom:0, pointerEvents:"none", zIndex:0, overflow:"hidden", background:`linear-gradient(180deg, ${CHARS[room]?.color || "#DCEBFF"} 0%, #EAF6FF 100%)` }}>
-                <img key={(dateBg && dateBg.room === room) ? "bg-" + dateBg.idx : "bg-static"} onError={imgFallback} src={(dateBg && dateBg.room === room ? dateBg.imgs[dateBg.idx] : null) || ((meta.roomBg || {})[room]) || ((() => { const _d = new Date(), _dy = _d.getDay(), _h = _d.getHours(); return _dy >= 1 && _dy <= 5 && _h >= 9 && _h < 18; })() ? (SCENE_CG[room + "_work"] || SCENE_CG[room + "_office"] || SCENE_CG[room + "_daily"] || SCENE_CG[room + "_home"]) : (SCENE_CG[room + "_daily"] || SCENE_CG[room + "_home"] || SCENE_CG[room + "_date"] || SCENE_CG[room + "_work"] || SCENE_CG[room + "_office"])) || AVATAR_URLS[room] || (scene && (SCENE_CG[room + "_" + scene] || SCENE_CG["all_" + scene])) || (MULTI(room) ? SCENE_CG.all_stage : (cardBgFor(room) || BG_IMG(room)))} alt="" style={{ position:"absolute", inset:"-9%", width:"118%", height:"118%", objectFit:"cover", objectPosition:"center 20%", display:"block", filter:"blur(22px) saturate(.9)", opacity:.62, transform:"scale(1.08)" }} />
-                <img key={(dateBg && dateBg.room === room) ? "bgm-" + dateBg.idx : "bgm-static"} onError={imgFallback} src={(dateBg && dateBg.room === room ? dateBg.imgs[dateBg.idx] : null) || ((meta.roomBg || {})[room]) || ((() => { const _d = new Date(), _dy = _d.getDay(), _h = _d.getHours(); return _dy >= 1 && _dy <= 5 && _h >= 9 && _h < 18; })() ? (SCENE_CG[room + "_work"] || SCENE_CG[room + "_office"] || SCENE_CG[room + "_daily"] || SCENE_CG[room + "_home"]) : (SCENE_CG[room + "_daily"] || SCENE_CG[room + "_home"] || SCENE_CG[room + "_date"] || SCENE_CG[room + "_work"] || SCENE_CG[room + "_office"])) || AVATAR_URLS[room] || (scene && (SCENE_CG[room + "_" + scene] || SCENE_CG["all_" + scene])) || (MULTI(room) ? SCENE_CG.all_stage : (cardBgFor(room) || BG_IMG(room)))} alt="" style={{ animation:(dateBg && dateBg.room === room) ? "sceneIn 1.3s ease-out" : "none", position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:"center top", display:"block" }} />
+                {(() => {
+                  const _d = new Date(), _dy = _d.getDay(), _h = _d.getHours();
+                  const _officeHours = _dy >= 1 && _dy <= 5 && _h >= 9 && _h < 18;
+                  const _bgSrc = (dateBg && dateBg.room === room ? dateBg.imgs[dateBg.idx] : null)
+                    || ((meta.roomBg || {})[room])
+                    || (_officeHours
+                      ? (SCENE_CG[room + "_work"] || SCENE_CG[room + "_office"] || SCENE_CG[room + "_daily"] || SCENE_CG[room + "_home"])
+                      : (SCENE_CG[room + "_daily"] || SCENE_CG[room + "_home"] || SCENE_CG[room + "_date"] || SCENE_CG[room + "_work"] || SCENE_CG[room + "_office"]))
+                    || AVATAR_URLS[room]
+                    || (scene && (SCENE_CG[room + "_" + scene] || SCENE_CG["all_" + scene]))
+                    || (MULTI(room) ? SCENE_CG.all_stage : (cardBgFor(room) || BG_IMG(room)));
+                  const _video = isVideoAsset(_bgSrc);
+                  const _blurStyle = { position:"absolute", inset:"-9%", width:"118%", height:"118%", objectFit:"cover", objectPosition:"center 20%", display:"block", filter:"blur(22px) saturate(.9)", opacity:.62, transform:"scale(1.08)" };
+                  const _mainStyle = { animation:(dateBg && dateBg.room === room) ? "sceneIn 1.3s ease-out" : "none", position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:"center top", display:"block" };
+                  const _key = (dateBg && dateBg.room === room) ? dateBg.idx : "static";
+                  return _video ? <>
+                    <video key={"bg-video-blur-" + _key} onError={imgFallback} src={_bgSrc} autoPlay muted loop playsInline preload="auto" style={_blurStyle} />
+                    <video key={"bg-video-main-" + _key} onError={imgFallback} src={_bgSrc} autoPlay muted loop playsInline preload="auto" style={_mainStyle} />
+                  </> : <>
+                    <img key={"bg-" + _key} onError={imgFallback} src={_bgSrc} alt="" style={_blurStyle} />
+                    <img key={"bgm-" + _key} onError={imgFallback} src={_bgSrc} alt="" style={_mainStyle} />
+                  </>;
+                })()}
                 {dateBg && dateBg.room === room && <div key={"shine-" + dateBg.idx} style={{ position:"absolute", inset:0, background:"radial-gradient(130% 100% at 50% 42%, rgba(255,255,255,.95) 0%, rgba(255,224,244,.6) 34%, rgba(214,228,255,.42) 58%, rgba(255,244,214,.2) 74%, transparent 88%)", animation:"sceneMagic 1.8s ease-in-out both, sceneMagicHue 1.8s linear both", mixBlendMode:"screen", pointerEvents:"none" }} />}
                 <div style={{ position:"absolute", inset:0, background: cineScene === room ? "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 62%, rgba(0,0,0,.35) 100%)" : (vnStory ? "rgba(234,246,255,0)" : "rgba(234,246,255,.12)") }} />
                 <div style={{ position:"absolute", inset:0, background:"#07070F", opacity: lightsOff === room ? .93 : 0, transition:"opacity 1.4s ease", pointerEvents:"none" }} />
